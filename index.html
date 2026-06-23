@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ServiceFlow ERP — After-Sales & Service Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --ink:      #0D1117;
+  --bg:       #F4F5F7;
+  --white:    #FFFFFF;
+  --accent:   #1B6EF3;
+  --accent2:  #00C2A8;
+  --success:  #2DB87C;
+  --warn:     #F5A623;
+  --danger:   #E94848;
+  --purple:   #7C3AED;
+  --border:   #E3E6ED;
+  --muted:    #6B7280;
+  --sidebar-w: 220px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; font-size: 14px; }
+
+/* ── LAYOUT ── */
+.shell { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--ink);
+  display: flex; flex-direction: column;
+  padding: 0;
+  overflow-y: auto;
+}
+.sb-logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sb-logo-name { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.sb-logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); }
+.sb-logo-sub { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.sb-section { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.3); padding: 16px 18px 6px; }
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 18px; cursor: pointer;
+  font-size: 13px; color: rgba(255,255,255,.55);
+  border-left: 2px solid transparent;
+  transition: background .15s, color .15s;
+  text-decoration: none;
+}
+.sb-item i { font-size: 16px; }
+.sb-item:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.9); }
+.sb-item.active { background: rgba(27,110,243,.18); color: #fff; border-left-color: var(--accent); font-weight: 500; }
+.sb-footer { margin-top: auto; padding: 14px 18px; border-top: 1px solid rgba(255,255,255,.08); font-size: 11px; color: rgba(255,255,255,.25); }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  height: 56px; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--ink); }
+.topbar-badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; background: #EEF4FF; color: var(--accent); font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: #EEF4FF; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--accent); }
+
+/* ── CONTENT ── */
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── COMPONENTS ── */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+.kpi { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.kpi-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--ink); }
+.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.kpi-value.blue { color: var(--accent); }
+.kpi-value.green { color: var(--success); }
+.kpi-value.amber { color: var(--warn); }
+
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 18px; }
+.card-head { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.card-head h3 { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+.card-body { padding: 18px 20px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; background: var(--bg); border-bottom: 1px solid var(--border); }
+td { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #F9FAFC; }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.b-open   { background: #EEF4FF; color: #1B6EF3; }
+.b-foc    { background: #E6FAF2; color: #0F7A4E; }
+.b-paid   { background: #FFF8EC; color: #9A5E00; }
+.b-closed { background: #F3F4F6; color: #6B7280; }
+.b-spare  { background: #EEF4FF; color: #1B6EF3; }
+.b-svc    { background: #E6FAF2; color: #0F7A4E; }
+.b-both   { background: #F5EEFF; color: #6D28D9; }
+.b-pending{ background: #FFF8EC; color: #9A5E00; }
+.b-accept { background: #E6FAF2; color: #0F7A4E; }
+.b-reject { background: #FEF2F2; color: #991B1B; }
+.b-low    { background: #FEF2F2; color: #991B1B; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); background: var(--white); color: var(--ink); transition: background .15s; font-family: inherit; }
+.btn:hover { background: var(--bg); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #155fd4; border-color: #155fd4; }
+.btn-danger { background: #FEF2F2; color: #991B1B; border-color: #FECACA; }
+.btn-danger:hover { background: #FEE2E2; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-icon { padding: 6px 8px; }
+.actions { display: flex; gap: 6px; }
+
+/* FORMS */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 5px; }
+.form-control { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--ink); background: var(--white); transition: border-color .15s, box-shadow .15s; }
+.form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(27,110,243,.1); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* SEARCH */
+.search-wrap { display: flex; gap: 8px; align-items: center; }
+.search-input { padding: 7px 12px 7px 32px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--ink); background: var(--bg); width: 220px; position: relative; }
+.search-input:focus { outline: none; border-color: var(--accent); background: var(--white); }
+.search-wrap-inner { position: relative; }
+.search-wrap-inner i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+/* MODAL */
+.modal-wrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; align-items: center; justify-content: center; }
+.modal-wrap.open { display: flex; }
+.modal { background: var(--white); border-radius: 14px; width: 500px; max-width: 96vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-head h3 { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; }
+.modal-body { padding: 22px; }
+.modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* WORKFLOW STAGES */
+.stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 20px; }
+.stage { background: var(--white); border: 1px solid var(--border); padding: 18px 14px; text-align: center; position: relative; }
+.stage:not(:last-child)::after { content: '›'; position: absolute; right: -9px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--border); z-index: 2; background: var(--white); line-height: 1; }
+.stage:first-child { border-radius: 10px 0 0 10px; }
+.stage:last-child { border-radius: 0 10px 10px 0; }
+.stage-icon { font-size: 20px; color: var(--muted); margin-bottom: 8px; }
+.stage-num { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; color: var(--ink); }
+.stage-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* PROGRESS BAR */
+.prog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.prog-lbl { font-size: 12px; color: var(--ink); width: 80px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prog-bar { flex: 1; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+.prog-val { font-size: 12px; font-weight: 600; color: var(--ink); width: 28px; text-align: right; }
+
+/* TIMELINE */
+.timeline { display: flex; flex-direction: column; }
+.tl-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.tl-item:last-child { border-bottom: none; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.tl-body { flex: 1; }
+.tl-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.tl-sub { font-size: 12px; color: var(--muted); }
+.tl-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* EXPORT */
+.export-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+pre.csv-preview { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 11px; color: var(--ink); overflow-x: auto; max-height: 180px; overflow-y: auto; white-space: pre; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; z-index: 2000; opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* CHART LEGENDS */
+.chart-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.chart-legend span { display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 48px 24px; color: var(--muted); }
+.empty i { font-size: 36px; display: block; margin-bottom: 10px; color: #D1D5DB; }
+.empty p { font-size: 13px; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .sidebar { width: 56px; }
+  .sb-logo-name span:not(.sb-logo-dot) { display: none; }
+  .sb-logo-sub { display: none; }
+  .sb-item span { display: none; }
+  .sb-section { display: none; }
+  .sb-footer { display: none; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .grid2 { grid-template-columns: 1fr; }
+  .stages { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .content { padding: 14px; }
+}
+
+/* Tabler icons */
+@import url("https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css");
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-name"><span class="sb-logo-dot"></span><span>ServiceFlow ERP</span></div>
+    <div class="sb-logo-sub">After-Sales Management</div>
+  </div>
+
+  <div class="sb-section">Operations</div>
+  <div class="sb-item active" data-page="dashboard" onclick="nav(this)"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
+  <div class="sb-item" data-page="requests" onclick="nav(this)"><i class="ti ti-tool"></i><span>Service Requests</span></div>
+  <div class="sb-item" data-page="workflow" onclick="nav(this)"><i class="ti ti-git-branch"></i><span>Workflow Tracker</span></div>
+  <div class="sb-item" data-page="quotations" onclick="nav(this)"><i class="ti ti-file-invoice"></i><span>Quotations</span></div>
+
+  <div class="sb-section">Master Data</div>
+  <div class="sb-item" data-page="customers" onclick="nav(this)"><i class="ti ti-users"></i><span>Customers</span></div>
+  <div class="sb-item" data-page="spares" onclick="nav(this)"><i class="ti ti-package"></i><span>Spare Parts</span></div>
+  <div class="sb-item" data-page="technicians" onclick="nav(this)"><i class="ti ti-hard-hat"></i><span>Technicians</span></div>
+
+  <div class="sb-section">Reports</div>
+  <div class="sb-item" data-page="export" onclick="nav(this)"><i class="ti ti-download"></i><span>Export / Reports</span></div>
+
+  <div class="sb-footer">v2.0 · GitHub Pages</div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <span class="topbar-badge" id="page-badge">Overview</span>
+    </div>
+    <div class="topbar-right">
+      <span style="font-size:12px;color:var(--muted);">Admin</span>
+      <div class="avatar">AD</div>
+    </div>
+  </header>
+
+  <!-- PAGES -->
+  <div class="content">
+
+    <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">Total requests</div><div class="kpi-value blue" id="kpi-total">0</div><div class="kpi-sub">All time</div></div>
+        <div class="kpi"><div class="kpi-label">Open</div><div class="kpi-value amber" id="kpi-open">0</div><div class="kpi-sub">Needs action</div></div>
+        <div class="kpi"><div class="kpi-label">FOC requests</div><div class="kpi-value green" id="kpi-foc">0</div><div class="kpi-sub">Under warranty</div></div>
+        <div class="kpi"><div class="kpi-label">Closed</div><div class="kpi-value" id="kpi-closed">0</div><div class="kpi-sub">Completed</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head">
+            <h3>Requests by month</h3>
+            <div class="chart-legend"><span><span class="leg-dot" style="background:#1B6EF3;"></span>Open</span><span><span class="leg-dot" style="background:#2DB87C;"></span>Closed</span></div>
+          </div>
+          <div class="card-body" style="padding-top:10px;">
+            <div style="position:relative;height:200px;"><canvas id="ch-monthly" role="img" aria-label="Monthly open and closed requests chart">Monthly requests chart.</canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Service type split</h3>
+            <div class="chart-legend"><span><span class="leg-dot" style="background:#1B6EF3;"></span>Spare</span><span><span class="leg-dot" style="background:#F5A623;"></span>Service</span><span><span class="leg-dot" style="background:#7C3AED;"></span>Both</span></div>
+          </div>
+          <div class="card-body" style="padding-top:10px;">
+            <div style="position:relative;height:200px;"><canvas id="ch-type" role="img" aria-label="Service type split doughnut chart">Type split chart.</canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head"><h3>Technician performance (jobs)</h3></div>
+          <div class="card-body" id="tech-perf"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Recent activity</h3></div>
+          <div class="card-body" style="padding:0 20px;">
+            <div class="timeline">
+              <div class="tl-item"><div class="tl-dot" style="background:#1B6EF3;"></div><div class="tl-body"><div class="tl-title">SR-047 created</div><div class="tl-sub">Priya Sharma — AC compressor</div></div><div class="tl-time">2 hr ago</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#2DB87C;"></div><div class="tl-body"><div class="tl-title">Q-031 accepted</div><div class="tl-sub">Anil Gupta — ₹6,200 approved</div></div><div class="tl-time">5 hr ago</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#F5A623;"></div><div class="tl-body"><div class="tl-title">SR-045 closed</div><div class="tl-sub">Vijay S. completed service</div></div><div class="tl-time">Yesterday</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#E94848;"></div><div class="tl-body"><div class="tl-title">PCB-110 low stock</div><div class="tl-sub">Only 2 units remaining</div></div><div class="tl-time">Yesterday</div></div>
+              <div class="tl-item"><div class="tl-dot" style="background:#1B6EF3;"></div><div class="tl-body"><div class="tl-title">SR-043 created</div><div class="tl-sub">Ramesh Kumar — Washing machine</div></div><div class="tl-time">2 days ago</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ SERVICE REQUESTS ═══════════════════ -->
+    <div class="page" id="page-requests">
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value blue" id="r-total">0</div></div>
+        <div class="kpi"><div class="kpi-label">Open</div><div class="kpi-value amber" id="r-open">0</div></div>
+        <div class="kpi"><div class="kpi-label">FOC</div><div class="kpi-value green" id="r-foc">0</div></div>
+        <div class="kpi"><div class="kpi-label">Closed</div><div class="kpi-value" id="r-closed">0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Service Requests</h3>
+          <div class="search-wrap">
+            <div class="search-wrap-inner"><i class="ti ti-search"></i><input class="search-input" placeholder="Search ID or customer…" oninput="filterTable('requests',this.value)" /></div>
+            <button class="btn btn-primary" onclick="openModal('request')"><i class="ti ti-plus"></i> New Request</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>SR ID</th><th>Customer</th><th>Product</th><th>Type</th><th>FOC</th><th>Status</th><th>Date</th><th>Technician</th><th>Actions</th></tr></thead>
+          <tbody id="tb-requests"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ WORKFLOW TRACKER ═══════════════════ -->
+    <div class="page" id="page-workflow">
+      <div class="stages">
+        <div class="stage"><div class="stage-icon"><i class="ti ti-phone-call"></i></div><div class="stage-num blue" id="st-1">0</div><div class="stage-lbl">Call booking</div></div>
+        <div class="stage"><div class="stage-icon"><i class="ti ti-shield-check"></i></div><div class="stage-num amber" id="st-2">0</div><div class="stage-lbl">FOC check</div></div>
+        <div class="stage"><div class="stage-icon"><i class="ti ti-tool"></i></div><div class="stage-num green" id="st-3">0</div><div class="stage-lbl">In service</div></div>
+        <div class="stage"><div class="stage-icon"><i class="ti ti-file-invoice"></i></div><div class="stage-num" id="st-4" style="color:var(--muted);">0</div><div class="stage-lbl">Quotation sent</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head"><h3>Resolution time trend (avg days)</h3></div>
+          <div class="card-body" style="padding-top:8px;"><div style="position:relative;height:180px;"><canvas id="ch-res" role="img" aria-label="Resolution time trend line chart">Resolution trend.</canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Requests by product category</h3></div>
+          <div class="card-body" style="padding-top:8px;"><div style="position:relative;height:180px;"><canvas id="ch-cat" role="img" aria-label="Requests by category bar chart">Category chart.</canvas></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Active requests — workflow status</h3></div>
+        <table>
+          <thead><tr><th>SR ID</th><th>Customer</th><th>Stage</th><th>FOC</th><th>Type</th><th>Technician</th><th>Days open</th></tr></thead>
+          <tbody id="tb-workflow"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ QUOTATIONS ═══════════════════ -->
+    <div class="page" id="page-quotations">
+      <div class="card">
+        <div class="card-head">
+          <h3>Service Quotations</h3>
+          <button class="btn btn-primary" onclick="openModal('quotation')"><i class="ti ti-plus"></i> New Quotation</button>
+        </div>
+        <table>
+          <thead><tr><th>Quote No.</th><th>SR ID</th><th>Customer</th><th>Amount</th><th>FOC Saving</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tb-quotations"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ CUSTOMERS ═══════════════════ -->
+    <div class="page" id="page-customers">
+      <div class="card">
+        <div class="card-head">
+          <h3>Customers</h3>
+          <div class="search-wrap">
+            <div class="search-wrap-inner"><i class="ti ti-search"></i><input class="search-input" placeholder="Search customers…" oninput="filterTable('customers',this.value)" /></div>
+            <button class="btn btn-primary" onclick="openModal('customer')"><i class="ti ti-plus"></i> Add Customer</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>City</th><th>SR Count</th><th>Actions</th></tr></thead>
+          <tbody id="tb-customers"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ SPARE PARTS ═══════════════════ -->
+    <div class="page" id="page-spares">
+      <div class="card">
+        <div class="card-head">
+          <h3>Spare Parts Inventory</h3>
+          <div class="search-wrap">
+            <div class="search-wrap-inner"><i class="ti ti-search"></i><input class="search-input" placeholder="Search parts…" oninput="filterTable('spares',this.value)" /></div>
+            <button class="btn btn-primary" onclick="openModal('spare')"><i class="ti ti-plus"></i> Add Part</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Part No.</th><th>Description</th><th>Category</th><th>Stock</th><th>Unit Price</th><th>Actions</th></tr></thead>
+          <tbody id="tb-spares"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ TECHNICIANS ═══════════════════ -->
+    <div class="page" id="page-technicians">
+      <div class="card">
+        <div class="card-head">
+          <h3>Technicians</h3>
+          <button class="btn btn-primary" onclick="openModal('tech')"><i class="ti ti-plus"></i> Add Technician</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Specialisation</th><th>Phone</th><th>Jobs Done</th><th>Actions</th></tr></thead>
+          <tbody id="tb-technicians"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ EXPORT / REPORTS ═══════════════════ -->
+    <div class="page" id="page-export">
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-head"><h3>Export to CSV</h3></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Click any module to preview and download its data as a CSV file.</p>
+          <div class="export-btns">
+            <button class="btn btn-primary" onclick="doExport('requests')"><i class="ti ti-download"></i> Service Requests</button>
+            <button class="btn" onclick="doExport('customers')"><i class="ti ti-download"></i> Customers</button>
+            <button class="btn" onclick="doExport('spares')"><i class="ti ti-download"></i> Spare Parts</button>
+            <button class="btn" onclick="doExport('quotations')"><i class="ti ti-download"></i> Quotations</button>
+            <button class="btn" onclick="doExport('technicians')"><i class="ti ti-download"></i> Technicians</button>
+          </div>
+          <div id="export-preview" style="display:none;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;" id="export-lbl"></div>
+            <pre class="csv-preview" id="export-pre"></pre>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="downloadCSV()"><i class="ti ti-download"></i> Download file</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Summary report</h3></div>
+        <table>
+          <thead><tr><th>Metric</th><th>Value</th><th>Status</th></tr></thead>
+          <tbody id="tb-summary"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- MODAL -->
+<div class="modal-wrap" id="modal-wrap" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3 id="modal-title">Add Record</h3>
+      <button class="btn btn-icon" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
+
+<script>
+/* ═══ DATA STORE ═══ */
+let DB = {
+  requests: [
+    {id:'SR-001',customer:'Ramesh Kumar',product:'AC Model RK-210',type:'both',foc:'Yes',status:'Open',date:'2026-06-10',tech:'Vijay S.'},
+    {id:'SR-002',customer:'Priya Sharma',product:'Washing Machine WM-550',type:'service',foc:'No',status:'Closed',date:'2026-06-12',tech:'Mohan D.'},
+    {id:'SR-003',customer:'Anil Gupta',product:'Refrigerator RF-330',type:'spare',foc:'Yes',status:'Open',date:'2026-06-15',tech:'Vijay S.'},
+    {id:'SR-004',customer:'Sunita Verma',product:'Microwave MW-120',type:'service',foc:'No',status:'Open',date:'2026-06-18',tech:'Rahul K.'},
+    {id:'SR-005',customer:'Deepak Mehta',product:'AC Split-300',type:'both',foc:'Yes',status:'Open',date:'2026-06-20',tech:'Suresh P.'},
+  ],
+  customers: [
+    {id:'C-001',name:'Ramesh Kumar',phone:'9876543210',email:'ramesh@mail.com',city:'Delhi'},
+    {id:'C-002',name:'Priya Sharma',phone:'9871234567',email:'priya@mail.com',city:'Mumbai'},
+    {id:'C-003',name:'Anil Gupta',phone:'9865432109',email:'anil@mail.com',city:'Bangalore'},
+    {id:'C-004',name:'Sunita Verma',phone:'9812345678',email:'sunita@mail.com',city:'Pune'},
+    {id:'C-005',name:'Deepak Mehta',phone:'9833445566',email:'deepak@mail.com',city:'Hyderabad'},
+  ],
+  spares: [
+    {partno:'CU-2241',desc:'Compressor Unit',cat:'AC',stock:5,price:4500},
+    {partno:'PCB-110',desc:'PCB Control Board',cat:'AC',stock:2,price:3200},
+    {partno:'MTR-550',desc:'Drum Motor WM',cat:'Washing Machine',stock:3,price:2800},
+    {partno:'REF-GAS',desc:'Refrigerant R32 (1kg)',cat:'Refrigerator',stock:20,price:900},
+    {partno:'HTR-220',desc:'Magnetron Heater',cat:'Microwave',stock:7,price:1800},
+  ],
+  quotations: [
+    {id:'Q-001',srId:'SR-001',customer:'Ramesh Kumar',amount:7788,foc:3200,status:'Pending'},
+    {id:'Q-002',srId:'SR-002',customer:'Priya Sharma',amount:1200,foc:0,status:'Accepted'},
+    {id:'Q-003',srId:'SR-003',customer:'Anil Gupta',amount:4500,foc:4500,status:'Pending'},
+  ],
+  technicians: [
+    {id:'T-001',name:'Vijay S.',spec:'AC & Refrigeration',phone:'9811223344',jobs:28},
+    {id:'T-002',name:'Mohan D.',spec:'Washing Machines',phone:'9822334455',jobs:19},
+    {id:'T-003',name:'Rahul K.',spec:'Small Appliances',phone:'9833445566',jobs:14},
+    {id:'T-004',name:'Suresh P.',spec:'General',phone:'9844556677',jobs:6},
+  ]
+};
+
+let counters = {request:6,customer:6,spare:6,quotation:4,tech:5};
+let filters = {};
+let editId = null, modalType = '';
+let lastCSV = {csv:'',filename:''};
+let charts = {};
+
+/* ═══ NAVIGATION ═══ */
+const pageTitles = {dashboard:'Dashboard',requests:'Service Requests',workflow:'Workflow Tracker',quotations:'Quotations',customers:'Customers',spares:'Spare Parts',technicians:'Technicians',export:'Export & Reports'};
+const pageBadges = {dashboard:'Overview',requests:'CRUD',workflow:'Pipeline',quotations:'CRUD',customers:'Master Data',spares:'Inventory',technicians:'Master Data',export:'Reports'};
+
+function nav(el) {
+  document.querySelectorAll('.sb-item').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  const page = el.dataset.page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[page];
+  document.getElementById('page-badge').textContent = pageBadges[page];
+  renderAll();
+}
+
+/* ═══ RENDER ALL ═══ */
+function renderAll() {
+  renderDashboard();
+  renderRequests();
+  renderWorkflow();
+  renderQuotations();
+  renderCustomers();
+  renderSpares();
+  renderTechnicians();
+  renderExport();
+}
+
+/* ═══ DASHBOARD ═══ */
+function renderDashboard() {
+  const r = DB.requests;
+  const total=r.length, open=r.filter(x=>x.status==='Open').length, foc=r.filter(x=>x.foc==='Yes').length, closed=r.filter(x=>x.status==='Closed').length;
+  document.getElementById('kpi-total').textContent=total;
+  document.getElementById('kpi-open').textContent=open;
+  document.getElementById('kpi-foc').textContent=foc;
+  document.getElementById('kpi-closed').textContent=closed;
+
+  /* tech perf */
+  const maxJobs = Math.max(...DB.technicians.map(t=>t.jobs),1);
+  document.getElementById('tech-perf').innerHTML = DB.technicians.map(t=>`
+    <div class="prog-row">
+      <div class="prog-lbl">${t.name}</div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${Math.round(t.jobs/maxJobs*100)}%;"></div></div>
+      <div class="prog-val">${t.jobs}</div>
+    </div>`).join('');
+
+  buildCharts();
+}
+
+/* ═══ CHARTS ═══ */
+function buildCharts() {
+  if(charts.monthly) charts.monthly.destroy();
+  if(charts.type) charts.type.destroy();
+  if(charts.res) charts.res.destroy();
+  if(charts.cat) charts.cat.destroy();
+
+  const commonOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} };
+
+  const monthEl = document.getElementById('ch-monthly');
+  if(monthEl) charts.monthly = new Chart(monthEl,{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Open',data:[4,3,5,6,4,DB.requests.filter(r=>r.status==='Open').length],backgroundColor:'#1B6EF3',borderRadius:3},{label:'Closed',data:[2,4,3,5,6,DB.requests.filter(r=>r.status==='Closed').length],backgroundColor:'#2DB87C',borderRadius:3}]},options:{...commonOpts,scales:{x:{ticks:{color:'#9CA3AF',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#9CA3AF',font:{size:11}},grid:{color:'rgba(0,0,0,.05)'}}}}});
+
+  const typeEl = document.getElementById('ch-type');
+  const spare=DB.requests.filter(r=>r.type==='spare').length, svc=DB.requests.filter(r=>r.type==='service').length, both=DB.requests.filter(r=>r.type==='both').length;
+  if(typeEl) charts.type = new Chart(typeEl,{type:'doughnut',data:{labels:['Spare','Service','Both'],datasets:[{data:[spare||1,svc||1,both||1],backgroundColor:['#1B6EF3','#F5A623','#7C3AED'],borderWidth:0}]},options:{...commonOpts,cutout:'65%'}});
+
+  const resEl = document.getElementById('ch-res');
+  if(resEl) charts.res = new Chart(resEl,{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Days',data:[4.2,3.8,3.5,3.1,2.6,2.1],borderColor:'#1B6EF3',backgroundColor:'rgba(27,110,243,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#1B6EF3',borderWidth:2}]},options:{...commonOpts,scales:{x:{ticks:{color:'#9CA3AF',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#9CA3AF',font:{size:11},callback:v=>v+'d'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+
+  const catEl = document.getElementById('ch-cat');
+  if(catEl) charts.cat = new Chart(catEl,{type:'bar',data:{labels:['AC','Washing Machine','Refrigerator','Microwave'],datasets:[{data:[18,12,10,7],backgroundColor:'#1B6EF3',borderRadius:3}]},options:{...commonOpts,indexAxis:'y',scales:{x:{ticks:{color:'#9CA3AF',font:{size:11}},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{color:'#9CA3AF',font:{size:11}},grid:{display:false}}}}});
+}
+
+/* ═══ SERVICE REQUESTS ═══ */
+function renderRequests(q='') {
+  const rows = DB.requests.filter(r=>!q||(r.id+r.customer+r.product).toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('r-total').textContent=DB.requests.length;
+  document.getElementById('r-open').textContent=DB.requests.filter(r=>r.status==='Open').length;
+  document.getElementById('r-foc').textContent=DB.requests.filter(r=>r.foc==='Yes').length;
+  document.getElementById('r-closed').textContent=DB.requests.filter(r=>r.status==='Closed').length;
+  const tbody = document.getElementById('tb-requests');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-clipboard-x"></i><p>No service requests found</p></div></td></tr>`;return;}
+  tbody.innerHTML=rows.map(r=>`<tr>
+    <td><strong>${r.id}</strong></td>
+    <td>${r.customer}</td>
+    <td style="color:var(--muted);font-size:12px;">${r.product}</td>
+    <td><span class="badge ${r.type==='spare'?'b-spare':r.type==='service'?'b-svc':'b-both'}">${r.type==='spare'?'Spare':r.type==='service'?'Service':'Spare+Svc'}</span></td>
+    <td><span class="badge ${r.foc==='Yes'?'b-foc':'b-paid'}">${r.foc==='Yes'?'FOC':'Paid'}</span></td>
+    <td><span class="badge ${r.status==='Open'?'b-open':'b-closed'}">${r.status}</span></td>
+    <td style="color:var(--muted);font-size:12px;">${r.date}</td>
+    <td style="font-size:12px;">${r.tech}</td>
+    <td><div class="actions">
+      <button class="btn btn-sm btn-icon" onclick="editRecord('request','${r.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="btn btn-sm btn-icon btn-danger" onclick="deleteRecord('request','${r.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+/* ═══ WORKFLOW ═══ */
+function renderWorkflow() {
+  const open = DB.requests.filter(r=>r.status==='Open');
+  const stages = ['Call booking','FOC check','In service','Quotation sent'];
+  const stageBadges = ['b-open','b-paid','b-svc','b-closed'];
+  document.getElementById('st-1').textContent = Math.ceil(open.length*.35)||0;
+  document.getElementById('st-2').textContent = Math.ceil(open.length*.25)||0;
+  document.getElementById('st-3').textContent = Math.ceil(open.length*.25)||0;
+  document.getElementById('st-4').textContent = Math.floor(open.length*.15)||0;
+  const tbody = document.getElementById('tb-workflow');
+  if(!open.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><i class="ti ti-check"></i><p>All requests are closed</p></div></td></tr>`;return;}
+  tbody.innerHTML=open.map((r,i)=>{
+    const daysDiff = Math.round((new Date()-new Date(r.date))/(1000*60*60*24));
+    return `<tr>
+      <td><strong>${r.id}</strong></td>
+      <td>${r.customer}</td>
+      <td><span class="badge ${stageBadges[i%4]}">${stages[i%4]}</span></td>
+      <td><span class="badge ${r.foc==='Yes'?'b-foc':'b-paid'}">${r.foc==='Yes'?'FOC':'Paid'}</span></td>
+      <td><span class="badge ${r.type==='spare'?'b-spare':r.type==='service'?'b-svc':'b-both'}">${r.type}</span></td>
+      <td style="font-size:12px;">${r.tech}</td>
+      <td style="color:${daysDiff>7?'var(--danger)':'var(--success)'};">${daysDiff}d</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══ QUOTATIONS ═══ */
+function renderQuotations() {
+  const tbody=document.getElementById('tb-quotations');
+  if(!DB.quotations.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><i class="ti ti-file-off"></i><p>No quotations yet</p></div></td></tr>`;return;}
+  tbody.innerHTML=DB.quotations.map(q=>`<tr>
+    <td><strong>${q.id}</strong></td>
+    <td style="color:var(--muted);font-size:12px;">${q.srId}</td>
+    <td>${q.customer}</td>
+    <td>₹${q.amount.toLocaleString('en-IN')}</td>
+    <td style="color:var(--success);">₹${q.foc.toLocaleString('en-IN')}</td>
+    <td><span class="badge ${q.status==='Accepted'?'b-accept':q.status==='Rejected'?'b-reject':'b-pending'}">${q.status}</span></td>
+    <td><div class="actions">
+      <button class="btn btn-sm btn-icon" onclick="editRecord('quotation','${q.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="btn btn-sm btn-icon btn-danger" onclick="deleteRecord('quotation','${q.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+/* ═══ CUSTOMERS ═══ */
+function renderCustomers(q='') {
+  const rows=DB.customers.filter(c=>!q||(c.name+c.email+c.city).toLowerCase().includes(q.toLowerCase()));
+  const tbody=document.getElementById('tb-customers');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><i class="ti ti-users-off"></i><p>No customers found</p></div></td></tr>`;return;}
+  tbody.innerHTML=rows.map(c=>{
+    const initials=c.name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+    const srCount=DB.requests.filter(r=>r.customer===c.name).length;
+    return `<tr>
+      <td style="color:var(--muted);font-size:12px;">${c.id}</td>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#EEF4FF;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;">${initials}</div>${c.name}</div></td>
+      <td style="font-size:12px;">${c.phone}</td>
+      <td style="color:var(--muted);font-size:12px;">${c.email}</td>
+      <td>${c.city}</td>
+      <td><span class="badge b-open">${srCount}</span></td>
+      <td><div class="actions">
+        <button class="btn btn-sm btn-icon" onclick="editRecord('customer','${c.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-icon btn-danger" onclick="deleteRecord('customer','${c.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══ SPARE PARTS ═══ */
+function renderSpares(q='') {
+  const rows=DB.spares.filter(s=>!q||(s.partno+s.desc+s.cat).toLowerCase().includes(q.toLowerCase()));
+  const tbody=document.getElementById('tb-spares');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="6"><div class="empty"><i class="ti ti-package-off"></i><p>No parts found</p></div></td></tr>`;return;}
+  tbody.innerHTML=rows.map(s=>`<tr>
+    <td style="font-family:monospace;font-size:12px;">${s.partno}</td>
+    <td>${s.desc}</td>
+    <td><span class="badge b-spare">${s.cat}</span></td>
+    <td><span class="${s.stock<5?'badge b-low':''}">${s.stock}</span></td>
+    <td>₹${s.price.toLocaleString('en-IN')}</td>
+    <td><div class="actions">
+      <button class="btn btn-sm btn-icon" onclick="editRecord('spare','${s.partno}')" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="btn btn-sm btn-icon btn-danger" onclick="deleteRecord('spare','${s.partno}')" title="Delete"><i class="ti ti-trash"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+/* ═══ TECHNICIANS ═══ */
+function renderTechnicians() {
+  const tbody=document.getElementById('tb-technicians');
+  if(!DB.technicians.length){tbody.innerHTML=`<tr><td colspan="6"><div class="empty"><i class="ti ti-user-off"></i><p>No technicians found</p></div></td></tr>`;return;}
+  tbody.innerHTML=DB.technicians.map(t=>`<tr>
+    <td style="color:var(--muted);font-size:12px;">${t.id}</td>
+    <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#FFF8EC;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#9A5E00;">${t.name[0]}</div>${t.name}</div></td>
+    <td style="color:var(--muted);font-size:12px;">${t.spec}</td>
+    <td style="font-size:12px;">${t.phone}</td>
+    <td><span class="badge b-open">${t.jobs}</span></td>
+    <td><div class="actions">
+      <button class="btn btn-sm btn-icon" onclick="editRecord('tech','${t.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="btn btn-sm btn-icon btn-danger" onclick="deleteRecord('tech','${t.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+/* ═══ EXPORT / REPORTS ═══ */
+function renderExport() {
+  const r=DB.requests;
+  const rows=[
+    ['Total service requests',r.length,'Active'],
+    ['Open requests',r.filter(x=>x.status==='Open').length,'Needs action'],
+    ['FOC this month',r.filter(x=>x.foc==='Yes').length,'Warranty'],
+    ['Spare parts (SKUs)',DB.spares.length,'Inventory'],
+    ['Low stock parts',DB.spares.filter(s=>s.stock<5).length,'Reorder'],
+    ['Active technicians',DB.technicians.length,'Operational'],
+    ['Pending quotations',DB.quotations.filter(q=>q.status==='Pending').length,'Follow up'],
+    ['Total customers',DB.customers.length,'Active'],
+  ];
+  const statBadge = ['b-open','b-paid','b-foc','b-open','b-low','b-foc','b-paid','b-foc'];
+  document.getElementById('tb-summary').innerHTML=rows.map((row,i)=>`<tr><td>${row[0]}</td><td><strong>${row[1]}</strong></td><td><span class="badge ${statBadge[i]}">${row[2]}</span></td></tr>`).join('');
+}
+
+function doExport(type) {
+  let headers=[], rows=[], filename='';
+  if(type==='requests'){headers=['SR ID','Customer','Product','Type','FOC','Status','Date','Technician'];rows=DB.requests.map(r=>[r.id,r.customer,r.product,r.type,r.foc,r.status,r.date,r.tech]);filename='service_requests.csv';}
+  else if(type==='customers'){headers=['ID','Name','Phone','Email','City'];rows=DB.customers.map(c=>[c.id,c.name,c.phone,c.email,c.city]);filename='customers.csv';}
+  else if(type==='spares'){headers=['Part No.','Description','Category','Stock','Unit Price'];rows=DB.spares.map(s=>[s.partno,s.desc,s.cat,s.stock,s.price]);filename='spare_parts.csv';}
+  else if(type==='quotations'){headers=['Quote No.','SR ID','Customer','Amount','FOC Saving','Status'];rows=DB.quotations.map(q=>[q.id,q.srId,q.customer,q.amount,q.foc,q.status]);filename='quotations.csv';}
+  else{headers=['ID','Name','Specialisation','Phone','Jobs Done'];rows=DB.technicians.map(t=>[t.id,t.name,t.spec,t.phone,t.jobs]);filename='technicians.csv';}
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  lastCSV={csv,filename};
+  document.getElementById('export-lbl').textContent=filename+' — preview';
+  document.getElementById('export-pre').textContent=[headers,...rows].slice(0,7).map(r=>r.join(',')).join('\n');
+  document.getElementById('export-preview').style.display='block';
+}
+
+function downloadCSV() {
+  const blob=new Blob([lastCSV.csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=Object.assign(document.createElement('a'),{href:url,download:lastCSV.filename});
+  a.click(); URL.revokeObjectURL(url);
+  toast('Downloaded '+lastCSV.filename);
+}
+
+/* ═══ FILTER ═══ */
+function filterTable(type, val) {
+  if(type==='requests') renderRequests(val);
+  else if(type==='customers') renderCustomers(val);
+  else if(type==='spares') renderSpares(val);
+}
+
+/* ═══ MODAL FORMS ═══ */
+const FORMS = {
+  request: d=>`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Customer name</label><input class="form-control" id="f-customer" value="${d.customer||''}" /></div>
+      <div class="form-group"><label class="form-label">Product / model</label><input class="form-control" id="f-product" value="${d.product||''}" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Service type</label>
+        <select class="form-control" id="f-type">
+          <option value="spare" ${d.type==='spare'?'selected':''}>Spare only</option>
+          <option value="service" ${d.type==='service'?'selected':''}>Service only</option>
+          <option value="both" ${!d.type||d.type==='both'?'selected':''}>Spare + Service</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">FOC?</label>
+        <select class="form-control" id="f-foc">
+          <option value="Yes" ${d.foc==='Yes'?'selected':''}>Yes — under warranty</option>
+          <option value="No" ${d.foc==='No'?'selected':''}>No — chargeable</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-control" id="f-status">
+          <option value="Open" ${!d.status||d.status==='Open'?'selected':''}>Open</option>
+          <option value="Closed" ${d.status==='Closed'?'selected':''}>Closed</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-control" id="f-date" value="${d.date||new Date().toISOString().slice(0,10)}" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">Assign technician</label>
+      <select class="form-control" id="f-tech">${DB.technicians.map(t=>`<option value="${t.name}" ${d.tech===t.name?'selected':''}>${t.name} — ${t.spec}</option>`).join('')}</select>
+    </div>`,
+
+  customer: d=>`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full name</label><input class="form-control" id="f-name" value="${d.name||''}" /></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-control" id="f-phone" value="${d.phone||''}" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="f-email" value="${d.email||''}" /></div>
+      <div class="form-group"><label class="form-label">City</label><input class="form-control" id="f-city" value="${d.city||''}" /></div>
+    </div>`,
+
+  spare: d=>`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Part number</label><input class="form-control" id="f-partno" value="${d.partno||''}" ${editId?'readonly':''} /></div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-control" id="f-cat">
+          ${['AC','Washing Machine','Refrigerator','Microwave','Other'].map(c=>`<option ${d.cat===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><input class="form-control" id="f-desc" value="${d.desc||''}" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Stock qty</label><input type="number" class="form-control" id="f-stock" value="${d.stock||0}" /></div>
+      <div class="form-group"><label class="form-label">Unit price (₹)</label><input type="number" class="form-control" id="f-price" value="${d.price||0}" /></div>
+    </div>`,
+
+  quotation: d=>`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Service request</label>
+        <select class="form-control" id="f-srId">${DB.requests.map(r=>`<option value="${r.id}" ${d.srId===r.id?'selected':''}>${r.id} — ${r.customer}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-control" id="f-qstatus">
+          ${['Pending','Accepted','Rejected'].map(s=>`<option ${d.status===s||(!d.status&&s==='Pending')?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Total amount (₹)</label><input type="number" class="form-control" id="f-amount" value="${d.amount||0}" /></div>
+      <div class="form-group"><label class="form-label">FOC saving (₹)</label><input type="number" class="form-control" id="f-foc" value="${d.foc||0}" /></div>
+    </div>`,
+
+  tech: d=>`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Name</label><input class="form-control" id="f-tname" value="${d.name||''}" /></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-control" id="f-tphone" value="${d.phone||''}" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">Specialisation</label>
+      <select class="form-control" id="f-tspec">
+        ${['AC & Refrigeration','Washing Machines','Small Appliances','General'].map(s=>`<option ${d.spec===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>`
+};
+
+function openModal(type, data={}) {
+  modalType=type; editId=null;
+  const titles={request:'New service request',customer:'Add customer',spare:'Add spare part',quotation:'New quotation',tech:'Add technician'};
+  document.getElementById('modal-title').textContent=titles[type];
+  document.getElementById('modal-body').innerHTML=FORMS[type](data);
+  document.getElementById('modal-wrap').classList.add('open');
+}
+
+function editRecord(type, id) {
+  editId=id; modalType=type;
+  let data;
+  if(type==='request') data=DB.requests.find(r=>r.id===id);
+  else if(type==='customer') data=DB.customers.find(c=>c.id===id);
+  else if(type==='spare') data=DB.spares.find(s=>s.partno===id);
+  else if(type==='quotation') data=DB.quotations.find(q=>q.id===id);
+  else data=DB.technicians.find(t=>t.id===id);
+  const titles={request:'Edit service request',customer:'Edit customer',spare:'Edit spare part',quotation:'Edit quotation',tech:'Edit technician'};
+  document.getElementById('modal-title').textContent=titles[type];
+  document.getElementById('modal-body').innerHTML=FORMS[type](data||{});
+  document.getElementById('modal-wrap').classList.add('open');
+}
+
+function saveModal() {
+  const g=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  if(modalType==='request') {
+    if(editId){const r=DB.requests.find(x=>x.id===editId);r.customer=g('f-customer');r.product=g('f-product');r.type=g('f-type');r.foc=g('f-foc');r.status=g('f-status');r.date=g('f-date');r.tech=g('f-tech');}
+    else DB.requests.push({id:`SR-00${counters.request++}`,customer:g('f-customer'),product:g('f-product'),type:g('f-type'),foc:g('f-foc'),status:g('f-status'),date:g('f-date'),tech:g('f-tech')});
+  } else if(modalType==='customer') {
+    if(editId){const c=DB.customers.find(x=>x.id===editId);c.name=g('f-name');c.phone=g('f-phone');c.email=g('f-email');c.city=g('f-city');}
+    else DB.customers.push({id:`C-00${counters.customer++}`,name:g('f-name'),phone:g('f-phone'),email:g('f-email'),city:g('f-city')});
+  } else if(modalType==='spare') {
+    if(editId){const s=DB.spares.find(x=>x.partno===editId);s.desc=g('f-desc');s.cat=g('f-cat');s.stock=+g('f-stock');s.price=+g('f-price');}
+    else DB.spares.push({partno:g('f-partno'),desc:g('f-desc'),cat:g('f-cat'),stock:+g('f-stock'),price:+g('f-price')});
+  } else if(modalType==='quotation') {
+    const sr=DB.requests.find(r=>r.id===g('f-srId'));
+    if(editId){const q=DB.quotations.find(x=>x.id===editId);q.srId=g('f-srId');q.customer=sr?sr.customer:'';q.amount=+g('f-amount');q.foc=+g('f-foc');q.status=g('f-qstatus');}
+    else DB.quotations.push({id:`Q-00${counters.quotation++}`,srId:g('f-srId'),customer:sr?sr.customer:'',amount:+g('f-amount'),foc:+g('f-foc'),status:g('f-qstatus')});
+  } else {
+    if(editId){const t=DB.technicians.find(x=>x.id===editId);t.name=g('f-tname');t.phone=g('f-tphone');t.spec=g('f-tspec');}
+    else DB.technicians.push({id:`T-00${counters.tech++}`,name:g('f-tname'),spec:g('f-tspec'),phone:g('f-tphone'),jobs:0});
+  }
+  closeModal();
+  renderAll();
+  toast(editId?'Record updated successfully':'Record added successfully');
+}
+
+function deleteRecord(type, id) {
+  if(!confirm('Delete this record?')) return;
+  if(type==='request') DB.requests=DB.requests.filter(r=>r.id!==id);
+  else if(type==='customer') DB.customers=DB.customers.filter(c=>c.id!==id);
+  else if(type==='spare') DB.spares=DB.spares.filter(s=>s.partno!==id);
+  else if(type==='quotation') DB.quotations=DB.quotations.filter(q=>q.id!==id);
+  else DB.technicians=DB.technicians.filter(t=>t.id!==id);
+  renderAll();
+  toast('Record deleted');
+}
+
+function closeModal(e) {
+  if(!e||e.target===document.getElementById('modal-wrap')) {
+    document.getElementById('modal-wrap').classList.remove('open');
+    editId=null;
+  }
+}
+
+function toast(msg) {
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+/* ═══ INIT ═══ */
+renderAll();
+</script>
+</body>
+</html>
